@@ -1,0 +1,133 @@
+---TP3 part 2---
+2)
+Interconnexion des bases
+Creer les liens entre les 3 bases
+
+(Lien entre etupre et etusec)
+
+Create DATABASE LINK lien_etusec
+Connect to LWD0902A
+Identified BY Wjnwjn142
+Using 'vers_etusec'
+
+(Lien entre etupre et etuter)
+Create DATABASE LINK lien_etuter
+Connect to LWD0902A
+Identified BY Wjnwjn142
+Using 'vers_etuter'
+
+(Lien entre etupre et etuter)
+Create DATABASE LINK lien_etupre
+Connect to LWD0902A
+Identified BY Wjnwjn142
+Using 'vers_etupre'
+
+TEST CONNECTION
+
+select*from continent_2@lien_etusec
+select*from continent_3@lien_etuter
+SELECT * FROM continent_1@lien_etupre
+
+3) Reconstruction des C.I. sur fragments
+
+SUR Etupre
+ALTER cle primaire
+
+ALTER TABLE Continent_1
+ADD CONSTRAINT pk_continent_1_nom PRIMARY KEY (nom);
+
+Trigger
+
+CREATE OR REPLACE Trigger t_iu_continent_1_nom
+Before Insert or UPDATE of nom
+ON Continent_1
+For each row
+DECLARE
+n number;
+
+BEGIN
+SELECT count (*) into n
+from Continent_2@lien_etusec
+where nom = :NEW.nom;
+    if n > 0 then
+        RAISE_APPLICATION_ERROR (-20000,'Error: continent existant in continent_2');
+    END IF;
+    
+SELECT count (*) into n
+from Continent_3@lien_etuter
+where nom = :NEW.nom;
+    if n > 0 then
+        RAISE_APPLICATION_ERROR (-20000,'Error: continent existant in continent_3');
+    END IF;
+END;
+
+Test trigger 1
+INSERT INTO continent_1(nom, superficie)
+VALUES ('Asie',2000)
+INSERT INTO continent_1(nom, superficie)
+VALUES ('Europe',2000)
+
+ETUSEC
+
+ALTER TABLE Continent_2
+ADD CONSTRAINT pk_continent_2_nom PRIMARY KEY (nom);
+
+
+CREATE OR REPLACE Trigger t_iu_continent_2_nom
+Before Insert or UPDATE of nom
+ON Continent_2
+For each row
+DECLARE
+n number;
+
+BEGIN
+SELECT count (*) into n
+from Continent_1@lien_etupre
+where nom = :NEW.nom;
+    if n > 0 then
+        RAISE_APPLICATION_ERROR (-20000,'Error: continent existant in continent_1');
+    END IF;
+    
+SELECT count (*) into n
+from Continent_3@lien_etuter
+where nom = :NEW.nom;
+    if n > 0 then
+        RAISE_APPLICATION_ERROR (-20000,'Error: continent existant in continent_3');
+    END IF;
+END;
+    
+ETUTER
+
+ALTER TABLE Continent_3
+ADD CONSTRAINT pk_continent_3_nom PRIMARY KEY (nom);
+
+
+CREATE OR REPLACE Trigger t_iu_continent_3_nom
+Before Insert or UPDATE of nom
+ON Continent_3
+For each row
+DECLARE
+n number;
+
+BEGIN
+SELECT count (*) into n
+from Continent_1@lien_etupre
+where nom = :NEW.nom;
+    if n > 0 then
+        RAISE_APPLICATION_ERROR (-20000,'Error: continent existant in continent_1');
+    END IF;
+    
+SELECT count (*) into n
+from Continent_2@lien_etusec
+where nom = :NEW.nom;
+    if n > 0 then
+        RAISE_APPLICATION_ERROR (-20000,'Error: continent existant in continent_2');
+    END IF;
+END;
+
+
+
+INSERT INTO continent_3(nom, superficie)
+VALUES ('Asie',2000)
+INSERT INTO continent_3(nom, superficie)
+VALUES ('Europe',2000)

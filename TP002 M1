@@ -1,0 +1,332 @@
+1)
+CREATE OR REPLACE PACKAGE gestion_geo AS
+	 PROCEDURE AjouterContinent(
+		p_nom Continent.nom%TYPE,
+		p_superficie Continent.superficie%TYPE);
+	END;
+/
+CREATE OR REPLACE PACKAGE BODY gestion_geo AS
+	 PROCEDURE AjouterContinent(
+			p_nom Continent.nom%TYPE,
+			p_superficie Continent.superficie%TYPE) IS
+	 BEGIN
+			 INSERT INTO Continent(nom, superficie)
+			 VALUES(p_nom, p_superficie);
+			 COMMIT;
+	 EXCEPTION
+		 WHEN DUP_VAL_ON_INDEX THEN
+		DBMS_OUTPUT.PUT_LINE('Erreur PK :  Continent existante !');
+	 END;
+END;
+---------------------------------------------------
+2)
+CREATE OR REPLACE PACKAGE gestion_geo AS
+	 PROCEDURE AjouterContinent(
+		p_nom Continent.nom%TYPE,
+		p_superficie Continent.superficie%TYPE);
+    PROCEDURE AJOUTERPAYS (
+        p_nom Pays.nom%TYPE,
+        p_capitale pays.capitale%TYPE,
+        p_superficie pays.superficie%TYPE,
+        p_population pays.population%TYPE,
+        p_iso2 pays.iso2%TYPE,
+        p_iso3 pays.iso3%TYPE,
+        p_nomc pays.nomc%TYPE);
+	END;
+/
+CREATE OR REPLACE PACKAGE BODY gestion_geo AS
+	 PROCEDURE AjouterContinent(
+			p_nom Continent.nom%TYPE,
+			p_superficie Continent.superficie%TYPE) IS
+	 BEGIN
+			 INSERT INTO Continent(nom, superficie)
+			 VALUES(p_nom, p_superficie);
+			 DBMS_OUTPUT.PUT_LINE(' Continent inseré !');
+			 COMMIT;
+	 EXCEPTION
+		 WHEN DUP_VAL_ON_INDEX THEN
+		DBMS_OUTPUT.PUT_LINE('Erreur PK :  Continent existante !');
+	 END;
+
+    PROCEDURE AJOUTERPAYS (
+        p_nom Pays.nom%TYPE,
+        p_capitale pays.capitale%TYPE,
+        p_superficie pays.superficie%TYPE,
+        p_population pays.population%TYPE,
+        p_iso2 pays.iso2%TYPE,
+        p_iso3 pays.iso3%TYPE,
+        p_nomc pays.nomc%TYPE) AS
+        
+    Check_contraint EXCEPTION;
+    PRAGMA EXCEPTION_INIT (check_contraint, -2290);
+    Foreign_key_continent EXCEPTION;
+    PRAGMA EXCEPTION_INIT (Foreign_key_continent, -2291);
+    BEGIN
+			 INSERT INTO PAYS(nom,capitale, superficie, population, iso2, iso3, nomc)
+			 VALUES(p_nom,p_capitale, p_superficie, p_population,p_iso2, p_iso3, p_nomc);
+			 DBMS_OUTPUT.PUT_LINE('Pays inseré !');
+			 COMMIT;
+	 EXCEPTION
+        WHEN DUP_VAL_ON_INDEX THEN
+        IF SQLERRM LIKE '%PK_PAYS%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  Pays existante !');
+            END IF;
+        IF SQLERRM LIKE '%uk_pays_iso3%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  code iso3 existante !');
+            END IF;
+        IF SQLERRM LIKE '%uk_pays_iso2%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  code iso2 existante !');  
+            END IF;
+        WHEN Check_contraint THEN
+		IF SQLERRM LIKE '%ck_pays_superficie%' THEN
+            DBMS_OUTPUT.PUT_LINE('Check constraint violated: superficie invalide');
+			END IF;
+		IF SQLERRM LIKE '%ck_pays_population%' THEN
+            DBMS_OUTPUT.PUT_LINE('Check constraint violated: population invalide');
+			END IF;	
+        WHEN Foreign_key_continent THEN
+            DBMS_OUTPUT.PUT_LINE('Continent existante');
+        END;
+END;
+
+EXECUTE Gestion_geo.Ajouterpays('MIAGE','MFCA',20000,5000,'MI','MIA','Europe');
+select *
+from pays
+where nom='MIAGE'
+EXECUTE Gestion_geo.Ajouterpays('Colombie','MFCA',20000,5000,'MI','MIA','Europe');
+EXECUTE Gestion_geo.Ajouterpays('MIAGE1','MFCA',20000,-5000,'M1','MI1','Europe');
+EXECUTE Gestion_geo.Ajouterpays('MIAGE1','MFCA',-20000,5000,'M1','MI1','Europe');
+EXECUTE Gestion_geo.Ajouterpays('MIAGE1','MFCA',20000,5000,'M1','MI1','ABC');
+EXECUTE Gestion_geo.AjouterContinent('UPS',20000);
+EXECUTE Gestion_geo.AjouterPays('UPS1','MFCA',20000,5000,'UP','UPS','Atlantic');
+
+3)--------------
+CREATE OR REPLACE PACKAGE gestion_geo AS
+	 PROCEDURE AjouterContinent(
+		p_nom Continent.nom%TYPE,
+		p_superficie Continent.superficie%TYPE);
+    PROCEDURE AJOUTERPAYS (
+        p_nom Pays.nom%TYPE,
+        p_capitale pays.capitale%TYPE,
+        p_superficie pays.superficie%TYPE,
+        p_population pays.population%TYPE,
+        p_iso2 pays.iso2%TYPE,
+        p_iso3 pays.iso3%TYPE,
+        p_nomc pays.nomc%TYPE);
+    PROCEDURE SUPPRIMERPAYS (
+        p_nom Pays.nom%TYPE);
+	END;
+/
+CREATE OR REPLACE PACKAGE BODY gestion_geo AS
+	 PROCEDURE AjouterContinent(
+			p_nom Continent.nom%TYPE,
+			p_superficie Continent.superficie%TYPE) IS
+	 BEGIN
+			 INSERT INTO Continent(nom, superficie)
+			 VALUES(p_nom, p_superficie);
+			 DBMS_OUTPUT.PUT_LINE(' Continent inseré !');
+			 COMMIT;
+	 EXCEPTION
+		 WHEN DUP_VAL_ON_INDEX THEN
+		DBMS_OUTPUT.PUT_LINE('Erreur PK :  Continent existante !');
+	 END;
+
+    PROCEDURE AJOUTERPAYS (
+        p_nom Pays.nom%TYPE,
+        p_capitale pays.capitale%TYPE,
+        p_superficie pays.superficie%TYPE,
+        p_population pays.population%TYPE,
+        p_iso2 pays.iso2%TYPE,
+        p_iso3 pays.iso3%TYPE,
+        p_nomc pays.nomc%TYPE) AS
+        
+    Check_contraint EXCEPTION;
+    PRAGMA EXCEPTION_INIT (check_contraint, -2290);
+    Foreign_key_continent EXCEPTION;
+    PRAGMA EXCEPTION_INIT (Foreign_key_continent, -2291);
+    BEGIN
+			 INSERT INTO PAYS(nom,capitale, superficie, population, iso2, iso3, nomc)
+			 VALUES(p_nom,p_capitale, p_superficie, p_population,p_iso2, p_iso3, p_nomc);
+			 DBMS_OUTPUT.PUT_LINE('Pays inseré !');
+			 COMMIT;
+	 EXCEPTION
+        WHEN DUP_VAL_ON_INDEX THEN
+        IF SQLERRM LIKE '%PK_PAYS%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  Pays existante !');
+            END IF;
+        IF SQLERRM LIKE '%uk_pays_iso3%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  code iso3 existante !');
+            END IF;
+        IF SQLERRM LIKE '%uk_pays_iso2%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  code iso2 existante !');  
+            END IF;
+        WHEN Check_contraint THEN
+		IF SQLERRM LIKE '%ck_pays_superficie%' THEN
+            DBMS_OUTPUT.PUT_LINE('Check constraint violated: superficie invalide');
+			END IF;
+		IF SQLERRM LIKE '%ck_pays_population%' THEN
+            DBMS_OUTPUT.PUT_LINE('Check constraint violated: population invalide');
+			END IF;	
+        WHEN Foreign_key_continent THEN
+            DBMS_OUTPUT.PUT_LINE('Continent existante');
+        END;
+
+    PROCEDURE SUPPRIMERPAYS ( p_nom Pays.nom%TYPE) AS
+        n number;
+        Pays_inconnu EXCEPTION;
+     BEGIN
+        SELECT COUNT(*) INTO n
+        FROM Pays WHERE nom = p_nom;
+	
+        IF (n = 0) THEN 
+        RAISE Pays_inconnu;
+        END IF;
+        
+        DELETE FROM frontiere where nomf=p_nom OU nomp=p_nom;
+        DELETE FROM Localiser where nomp=p_nom;
+        DELETE FROM traverser where nomp=p_nom;
+        DELETE FROM PAYS WHERE nom = p_nom;
+        DBMS_OUTPUT.PUT_LINE(('Pay_supprimer '||p_nom));
+        COMMIT;
+            
+    EXCEPTION
+    WHEN Pays_inconnu THEN 
+    DBMS_OUTPUT.PUT_LINE('Pays inconnu');
+    END;
+END;
+
+SET SERVEROUTPUT ON;
+execute gestion_geo.supprimerpays( 'France');
+4)------------
+
+
+
+SET SERVEROUTPUT ON;
+create or replace PACKAGE BODY gestion_geo AS
+	 PROCEDURE AjouterContinent(
+			p_nom Continent.nom%TYPE,
+			p_superficie Continent.superficie%TYPE) IS
+	 BEGIN
+			 INSERT INTO Continent(nom, superficie)
+			 VALUES(p_nom, p_superficie);
+			 DBMS_OUTPUT.PUT_LINE(' Continent inseré !');
+			 COMMIT;
+	 EXCEPTION
+		 WHEN DUP_VAL_ON_INDEX THEN
+		DBMS_OUTPUT.PUT_LINE('Erreur PK :  Continent existante !');
+	 END;
+
+    PROCEDURE AJOUTERPAYS (
+        p_nom Pays.nom%TYPE,
+        p_capitale pays.capitale%TYPE,
+        p_superficie pays.superficie%TYPE,
+        p_population pays.population%TYPE,
+        p_iso2 pays.iso2%TYPE,
+        p_iso3 pays.iso3%TYPE,
+        p_nomc pays.nomc%TYPE) AS
+
+    Check_contraint EXCEPTION;
+    PRAGMA EXCEPTION_INIT (check_contraint, -2290);
+    Foreign_key_continent EXCEPTION;
+    PRAGMA EXCEPTION_INIT (Foreign_key_continent, -2291);
+    BEGIN
+			 INSERT INTO PAYS(nom,capitale, superficie, population, iso2, iso3, nomc)
+			 VALUES(p_nom,p_capitale, p_superficie, p_population,p_iso2, p_iso3, p_nomc);
+			 DBMS_OUTPUT.PUT_LINE('Pays inseré !');
+			 COMMIT;
+	 EXCEPTION
+        WHEN DUP_VAL_ON_INDEX THEN
+        IF SQLERRM LIKE '%PK_PAYS%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  Pays existante !');
+            END IF;
+        IF SQLERRM LIKE '%UK_PAYS_ISO3%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  code iso3 existante !');
+            END IF;
+        IF SQLERRM LIKE '%UK_PAYS_ISO2%' THEN
+            DBMS_OUTPUT.PUT_LINE('Erreur PK :  code iso2 existante !');  
+            END IF;
+        WHEN Check_contraint THEN
+		IF SQLERRM LIKE '%CK_PAYS_SUPERFICIE%' THEN
+            DBMS_OUTPUT.PUT_LINE('Check constraint violated: superficie invalide');
+			END IF;
+		IF SQLERRM LIKE '%CK_PAYS_POPULATION%' THEN
+            DBMS_OUTPUT.PUT_LINE('Check constraint violated: population invalide');
+			END IF;	
+        WHEN Foreign_key_continent THEN
+            DBMS_OUTPUT.PUT_LINE('Continent inconnu');
+        END;
+
+    PROCEDURE SUPPRIMERPAYS ( p_nom Pays.nom%TYPE) AS
+        n number;
+        Pays_inconnu EXCEPTION;
+     BEGIN
+        SELECT COUNT(*) INTO n
+        FROM Pays WHERE nom = p_nom;
+
+        IF (n = 0) THEN 
+        RAISE Pays_inconnu;
+        END IF;
+
+        DELETE FROM frontiere where nomf=p_nom OR nomp=p_nom;
+        DELETE FROM Localiser where nomp=p_nom;
+        DELETE FROM traverser where nomp=p_nom;
+        DELETE FROM PAYS WHERE nom = p_nom;
+        DBMS_OUTPUT.PUT_LINE(('Pay_supprimer '||p_nom));
+        COMMIT;
+
+    EXCEPTION
+    WHEN Pays_inconnu THEN 
+    DBMS_OUTPUT.PUT_LINE('Pays inconnu');
+    END;
+PROCEDURE AfficherPays(
+    p_nom Continent.nom%TYPE) IS
+    vnom Continent.nom%TYPE;
+    vsuperficie Continent.superficie%TYPE;
+    v_nompays Pays.nom%TYPE;
+    v_capitale pays.capitale%TYPE;
+    v_superficiepays pays.superficie%TYPE;
+    v_population pays.population%TYPE;
+    v_iso2 pays.iso2%TYPE;
+    v_iso3 pays.iso3%TYPE;
+    v_nomc pays.nomc%TYPE;
+    Continent_inconnu EXCEPTION;
+    m Number;
+    
+    BEGIN
+    SELECT COUNT(*) INTO m
+    FROM Continent WHERE nom = p_nom;
+	
+    IF (m = 0) THEN 
+    RAISE Continent_inconnu;
+    END IF;
+    
+    select superficie INTO vsuperficie
+    from continent
+    where nom=p_nom;
+    
+    DBMS_OUTPUT.PUT_LINE('PAYS DU CONTINENT  '||p_nom ||' ET La superficie: '||vsuperficie);
+    DBMS_OUTPUT.PUT_LINE('');
+    
+
+    For c1 IN ( select nom,iso2, iso3, capitale, superficie, population
+                from pays
+                where nomc= p_nom
+                order by nom)
+    LOOP
+    v_nompays := c1.nom;
+    v_iso2 := c1.iso2;
+    v_iso3  := c1.iso3;
+    v_capitale := c1.capitale;
+    v_superficiepays := c1.superficie;
+    v_population := c1.population;
+    
+
+    DBMS_OUTPUT.PUT_LINE(v_nompays||'('||v_iso2||'-'||v_iso3||')'|| '-- Capitale: '||v_capitale||'-- Superficie: '||v_superficiepays||' --Population: '||v_population);
+    END LOOP; 
+    
+    EXCEPTION
+    WHEN Continent_inconnu THEN 
+    DBMS_OUTPUT.PUT_LINE('Continent inconnu');
+    END;
+ 
+END;
